@@ -32,6 +32,7 @@
 #define DAY_TIME                    7   // full brightness after 7 am
 #define BACKLIGHT_DIMMED_INTENSITY  1   // 0..7
 #define TFT_DIMMED_INTENSITY        20  // 0..255
+//#define DIM_WITH_ENABLE_PIN_PWM         // uncomment to enable hardware dimming with TFT Enable pin (GPIO 4)
 
 
 // ************* WiFi config *************
