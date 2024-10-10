@@ -42,6 +42,12 @@
   // if used with unsupported hardware! this feature only is expected to be supported safely by IPSTUBE clocks by now
 #endif
 
+#ifdef DIM_WITH_ENABLE_PIN_PWM
+  // skip reinitialization if using PWM to control backlight since actual TFTs are never deactivated
+  // disable by commenting the following line if this causes wake up issues from disabled (brightness 0) state
+  #define TFT_SKIP_REINIT
+#endif
+
 // ************* WiFi config *************
 #define WIFI_CONNECT_TIMEOUT_SEC    20
 #define WIFI_RETRY_CONNECTION_SEC   15

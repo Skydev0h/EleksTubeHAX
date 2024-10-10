@@ -35,6 +35,7 @@ void TFTs::begin() {
 }
 
 void TFTs::reinit() {
+  #ifndef TFT_SKIP_REINIT
   // Start with all displays selected.
   chip_select.begin();
   chip_select.setAll();
@@ -50,6 +51,9 @@ void TFTs::reinit() {
 
   // Initialize the super class.
   init();
+  #else
+  enableAllDisplays();
+  #endif
 }
 
 void TFTs::clear() {
