@@ -33,39 +33,6 @@
 #define BACKLIGHT_DIMMED_INTENSITY  1   // 0..7
 #define TFT_DIMMED_INTENSITY        20  // 0..255
 
-#ifdef HARDWARE_IPSTUBE_CLOCK
-  // Skip reinitialization
-  // Always skip reinitialization for IPSTUBE clocks, because the displays are either always on (versions without Q1 transistor) 
-  // and a reinit just shows strange patterns on the displays and forces an unnecessary redraw of the clock digits.
-  // or seems to don't need a reinit (with Q1) -> this is an assumption, because the display came back on after a few hours without problems
-  // NOTE: If this causes wake up issues for you, disable it by commenting the following line out and go back to full reinit after display power off
-  #define TFT_SKIP_REINIT
-
-  // Hardware dimming!
-  // This feature is only supported by IPSTUBE clocks by now!!!
-  // DON'T USE IT WITH OTHER CLOCKS! IT MAY DAMAGE YOUR CLOCK!
-
-  // In case you have an IPSTUBE clock that does not support hardware dimming because of missing Q1 transistor:
-  // This will NOT damage your clock, but the dimming of the displays will be totally disabled! Also the LCD power switch will not work!
-  // If you notice, that the night time dimming or manual dimming does not work, you may have a clock without the Q1 transistor 
-  // and you can/should comment the following line out to get back to the software dimming!
-
-  // Comment the next line out, to DISABLE hardware dimming with GPIO4 pin (TFT_ENABLE_PIN) for a IPSTUBE clock  
-  #define DIM_WITH_ENABLE_PIN_PWM
-    
-  //NOTE: If NIGTHTIME_DIMMING is enabled: 
-  // For the main LCDs: The dimming will be set to the hard coded value TFT_DIMMED_INTENSITY in the given time period EVERY HOUR beginning at NIGHT_TIME
-  //    and will set back to the maximum brightness at DAY_TIME...Disable NIGHTTIME_DIMMING if you want to use the manual set dimming value all the time
-  // For the backlight dimming: The dimming will ALWAYS stay to the hard coded value BACKLIGHT_DIMMED_INTENSITY in the given night time period! 
-  //    The check for it is done and the value is apply every loop...Disable NIGHTTIME_DIMMING if you want to use the manual set dimming value all the time
-
-  // TODO: Store the dimming values and dimming times in the NVS partition to keep the last dimming value and not use the hard coded values
-  // make the times and values adjustable in the menu and/or via MQTT for both main and backlight dimming
-
-  // TODO: Save the values changed via MQTT/in HA in the NVS partition to keep the values after a reboot. Maybe define a "save command" in HA or trigger after 
-  // a few minutes of inactivity only if changed something or in the "free time" of the loop cycle...
-  // Save it every time receiving MQTT commands is a BAD idea, we know that already ;)
-#endif
 
 // ************* WiFi config *************
 #define WIFI_CONNECT_TIMEOUT_SEC    20
