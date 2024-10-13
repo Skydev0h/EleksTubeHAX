@@ -8,20 +8,26 @@ void TFTs::begin() {
   chip_select.begin();
   chip_select.setAll();
 
-  // Turn power on to displays. 
-  pinMode(TFT_ENABLE_PIN, OUTPUT);
-  #ifdef DIM_WITH_ENABLE_PIN_PWM
+#ifdef DIM_WITH_ENABLE_PIN_PWM
+  //if hardware dimming is used, we need to attach the pin to a PWM channel
   ledcAttachPin(TFT_ENABLE_PIN, TFT_PWM_CHANNEL);
   ledcChangeFrequency(TFT_PWM_CHANNEL, 20000, 8);
-  ProcessUpdatedDimming();
-  #endif
-  enableAllDisplays();
+  //not needed here, because enableAllDisplays() is called later and it is called from there and if enabled is false, this does nothing
+  //ProcessUpdatedDimming();
+#else
+  // Set pin for turning display power on and off.
+  pinMode(TFT_ENABLE_PIN, OUTPUT);
+#endif
+  // Signal, that the image in the buffer is invalid and needs to be reloaded and refilled
   InvalidateImageInBuffer();
 
   // Initialize the super class.
   init();
   //to avoid flickering patterns on the screens
   fillScreen(TFT_BLACK);
+
+  // Signal, that the display is enabled now and do the hardware dimming if enabled
+  enableAllDisplays();
 
   // Set SPIFFS ready
   if (!SPIFFS.begin()) {
@@ -35,25 +41,35 @@ void TFTs::begin() {
 }
 
 void TFTs::reinit() {
-  #ifndef TFT_SKIP_REINIT
+#ifndef TFT_SKIP_REINIT
   // Start with all displays selected.
   chip_select.begin();
   chip_select.setAll();
 
-  // Turn power on to displays.
-  pinMode(TFT_ENABLE_PIN, OUTPUT);
-  #ifdef DIM_WITH_ENABLE_PIN_PWM
+#ifdef DIM_WITH_ENABLE_PIN_PWM
   ledcAttachPin(TFT_ENABLE_PIN, TFT_PWM_CHANNEL);
   ledcChangeFrequency(TFT_PWM_CHANNEL, 20000, 8);
-  ProcessUpdatedDimming();
-  #endif
+  //same thing as on first init, not needed here, because enableAllDisplays() is called later and it is called from there and if enabled is false, this does nothing
+  //ProcessUpdatedDimming();
+#else
+  // Turn power on to displays.
+  pinMode(TFT_ENABLE_PIN, OUTPUT);
+#endif
+  // Signal, that the image in the buffer is invalid and needs to be reloaded and refilled
+  // needed, because the last drawing can be long time ago?!?
+  InvalidateImageInBuffer();
+
+  // Initialize the super class (again).
+  init();
+  //to avoid flickering patterns on the screens
+  fillScreen(TFT_BLACK);
+  //signal that the display are enabled now, also do the hardware dimming if enabled
   enableAllDisplays();
 
-  // Initialize the super class.
-  init();
-  #else
+#else
+  //skip full inintialization, just reenable displays by signaling to enable them
   enableAllDisplays();
-  #endif
+#endif
 }
 
 void TFTs::clear() {
@@ -99,21 +115,23 @@ void TFTs::showNoMqttStatus() {
 void TFTs::enableAllDisplays() {
   // Turn power on to displays.  
   enabled = true;
-  #ifndef DIM_WITH_ENABLE_PIN_PWM
+#ifndef DIM_WITH_ENABLE_PIN_PWM
   digitalWrite(TFT_ENABLE_PIN, ACTIVATEDISPLAYS);
-  #else
+#else
+  //if hardware dimming is used, only activate with the current dimming value
   ProcessUpdatedDimming();
-  #endif
+#endif
 }
 
 void TFTs::disableAllDisplays() {
   // Turn power off to displays.
   enabled = false;
-  #ifndef DIM_WITH_ENABLE_PIN_PWM
+#ifndef DIM_WITH_ENABLE_PIN_PWM
   digitalWrite(TFT_ENABLE_PIN, DEACTIVATEDISPLAYS);
-  #else
+#else
+  //if hardware dimming is used, deactivate via the dimming value
   ProcessUpdatedDimming();
-  #endif
+#endif
 }
 
 void TFTs::toggleAllDisplays() {
@@ -202,15 +220,20 @@ void TFTs::InvalidateImageInBuffer() { // force reload from Flash with new dimmi
 }
 
 void TFTs::ProcessUpdatedDimming() {
-  #ifdef DIM_WITH_ENABLE_PIN_PWM
+#ifdef DIM_WITH_ENABLE_PIN_PWM
+  //hardware dimming is done via PWM on the pin defined by TFT_ENABLE_PIN
+  //ONLY for IPSTUBE clocks in the moment! Other clocks may be damaged!
   if (enabled) {
     ledcWrite(TFT_PWM_CHANNEL, CALCDIMVALUE(dimming));
   } else {
+    //no dimming means 255 (full brightness)
     ledcWrite(TFT_PWM_CHANNEL, CALCDIMVALUE(0));
   }
-  #else
+#else
+  // "software" dimming is done via alpha blending in the image drawing function
+  // signal that the image in the buffer is invalid and needs to be reloaded and refilled
   InvalidateImageInBuffer();
-  #endif
+#endif
 }
 
 bool TFTs::FileExists(const char* path) {
@@ -370,11 +393,11 @@ bool TFTs::LoadImageIntoBuffer(uint8_t file_index) {
         }
 
         uint16_t color = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | ((b & 0xFF) >> 3);
-        #ifndef DIM_WITH_ENABLE_PIN_PWM
+#ifndef DIM_WITH_ENABLE_PIN_PWM //skip alpha blending for dimming if hardware dimming is used
         if (dimming < 255) { // only dim when needed
           color = alphaBlend(dimming, color, TFT_BLACK);
         } // dimming
-        #endif
+#endif
 
         UnpackedImageBuffer[row+y][col+x] = color;
     } // col
@@ -483,9 +506,10 @@ bool TFTs::LoadImageIntoBuffer(uint8_t file_index) {
     
     // Colors are already in 16-bit R5, G6, B5 format
     for (col = 0; col < w; col++) {
-      #ifdef DIM_WITH_ENABLE_PIN_PWM
+#ifdef DIM_WITH_ENABLE_PIN_PWM
+      //skip alpha blending for dimming if hardware dimming is used
       UnpackedImageBuffer[row+y][col+x] = (lineBuffer[col*2+1] << 8) | (lineBuffer[col*2]);
-      #else
+#else
       if (dimming == 255) { // not needed, copy directly
         UnpackedImageBuffer[row+y][col+x] = (lineBuffer[col*2+1] << 8) | (lineBuffer[col*2]);
       } else {

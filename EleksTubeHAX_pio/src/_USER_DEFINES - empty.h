@@ -27,19 +27,28 @@
 
 
 // ************* Display Dimming / Night time operation *************
-#define DIMMING                         // uncomment to enable hardware dimming
+#define NIGHTTIME_DIMMING               // uncomment to enable dimming in the given time period between NIGHT_TIME and DAY_TIME
 #define NIGHT_TIME                  22  // dim displays at 10 pm 
 #define DAY_TIME                    7   // full brightness after 7 am
 #define BACKLIGHT_DIMMED_INTENSITY  1   // 0..7
 #define TFT_DIMMED_INTENSITY        20  // 0..255
 
 #ifdef HARDWARE_IPSTUBE_CLOCK
-  // comment the next line out to disable hardware dimming with GPIO4 pin (TFT_ENABLE_PIN) for IPSTUBE clock
+  // comment the next line out, to disable hardware dimming with GPIO4 pin (TFT_ENABLE_PIN) for IPSTUBE clock
   // (in case you have a clock that does not support hardware dimming because of missing Q1 transistor)
   #define DIM_WITH_ENABLE_PIN_PWM
   // it is recommended to try this feature only if you are sure that your clock supports hardware dimming
   // (that is, it is available in native application and really dims the backlight) because it may damage clock
   // if used with unsupported hardware! this feature only is expected to be supported safely by IPSTUBE clocks by now
+  
+  //NOTE: If NIGTHTIME_DIMMING is enabled: 
+  // For the main LCDs: The dimming will be set to the hard coded value TFT_DIMMED_INTENSITY in the given time period EVERY HOUR beginning at NIGHT_TIME
+  //    and will set back to the maximum brightness at DAY_TIME...Disable NIGHTTIME_DIMMING if you want to use the manual set dimming value all the time
+  // For the backlight dimming: The dimming will ALWAYS stay to the hard coded value BACKLIGHT_DIMMED_INTENSITY in the given night time period! 
+  //    The check for it is done and the value is apply every loop...Disable NIGHTTIME_DIMMING if you want to use the manual set dimming value all the time
+
+  // TODO: Store the dimming values and dimming times in the NVS partition to keep the last dimming value and not use the hard coded values
+  // make the times and values adjustable in the menu and/or via MQTT for both main and backlight dimming
 #endif
 
 #ifdef DIM_WITH_ENABLE_PIN_PWM

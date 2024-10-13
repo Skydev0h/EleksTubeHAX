@@ -75,14 +75,15 @@
 #define HOURS_TENS_MAP   (0x01 << HOURS_TENS)
 
 // Define the activate and deactivate state for the diplay power transistor
+// also define, how the dimming value is calculated
 #ifndef HARDWARE_IPSTUBE_CLOCK
   #define ACTIVATEDISPLAYS      HIGH    // Activate is HIGH for the IPSTUBEs
   #define DEACTIVATEDISPLAYS    LOW     // Deactivate is LOW for the IPSTUBEs
-  #define CALCDIMVALUE(x)       (x)
+  #define CALCDIMVALUE(x)       (x)     // Dimming value is directly used for software dimming
 #else
   #define ACTIVATEDISPLAYS      LOW     // Activate is LOW for the Elekstube
   #define DEACTIVATEDISPLAYS    HIGH    // Deactivate is HIGH for the Elekstube
-  #define CALCDIMVALUE(x)       (255 - x)
+  #define CALCDIMVALUE(x)       (255 - x) // Dimming value is inverted for hardware dimming
 #endif
 
 
@@ -370,8 +371,11 @@
   // #define CSSR_CLOCK_PIN (-1)
   // #define CSSR_LATCH_PIN (-1)
 
-  // The H401 has the enable pin of the LCDs connectected to the VCC, so Always On.  
-  #define TFT_ENABLE_PIN (GPIO_NUM_4) // pin 24 is GPIO4  
+  // All IPSTUBEs has the LCDs pins VCC power (LED Anode) and VDD (Power Supply for Analog) connectected to the VCC (3.3V) and Ground to Ground (PCB), so the displays are Always-On!
+  // EXCEPT: The Q1 transistor is present! 
+  // Then the GPIO4 pin is connected to the transistor and Ground of the LCDs is running through the transistor, so the LCDs can be turned on and off AND dimmed!
+  #define TFT_ENABLE_PIN (GPIO_NUM_4) // pin 24 is GPIO4
+  //if transistor is present and we want hardware dimming, we need to choose a PWM channel for this, can always be defines, even if not used
   #define TFT_PWM_CHANNEL 0
 
   // configure library \TFT_eSPI\User_Setup.h
